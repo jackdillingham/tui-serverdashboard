@@ -16,6 +16,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ftxui)
 
-add_executable(serverdash src/main.cpp)
+find_package(Threads REQUIRED)
+
+add_executable(
+  serverdash
+  src/main.cpp
+  src/dashboard.cpp
+  src/kubernetes_client.cpp
+  src/process.cpp
+)
+target_include_directories(serverdash PRIVATE src/include)
 target_compile_features(serverdash PRIVATE cxx_std_17)
-target_link_libraries(serverdash PRIVATE ftxui::ftxui)
+target_link_libraries(serverdash PRIVATE ftxui::ftxui Threads::Threads)

@@ -1,77 +1,51 @@
+#include <string>
+
+#include <ftxui/component/app.hpp>
 #include <ftxui/component/component.hpp>
-#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 
-void resources();
-void network();
-void storage();
-void actions();
-void ssh();
+#include "dashboard.hpp"
 
 int main() {
   using namespace ftxui;
 
-  int currentTab = 0;
-  bool started = false;
+  App app = App::Fullscreen();
+  int active_page = 0;
+  auto dashboard = std::make_shared<Dashboard>(app);
+  Component dashboard_component = dashboard->Build();
 
-  auto screen = App::FitComponent();
-
-
-  // START MENU
-
-  auto start = Renderer([&] {
+  auto enter_dashboard = [&] {
+    active_page = 1;
+    dashboard->Activate();
+  };
+  auto start_button = Button("Open dashboard", enter_dashboard);
+  auto start = Renderer(start_button, [&] {
     return vbox({
                text("ServerDash") | bold | center,
                separator(),
-               text(started ? "Main menu goes here." : "FTXUI is ready."),
+               text("Kubernetes node dashboard") | center,
                text(""),
-               text(started ? "" : "Press enter to continue.") | dim,
-               text("Press q or Escape to quit.") | dim,
+               start_button->Render() | center,
+               text(""),
+               text("Enter to continue  |  q or Escape to quit") | dim | center,
            }) |
            border | center;
   });
-
-
-
-
-  // MAIN MENU
-  auto mainMenu = Renderer([&] {
-    return vbox({
-               text("Main Menu") | bold | center,
-               separator(),
-               text("1. Resources"),
-               text("2. Network"),
-               text("3. Storage"),
-               text("4. Actions"),
-               text("5. SSH"),
-               text("Press q or Escape to quit.") | dim,
-           }) |
-           border | center;
-  });
-
-
-
   start |= CatchEvent([&](Event event) {
     if (event == Event::Return) {
-      started = true;
-      screen.Loop(mainMenu);
-    }
-
-    if (event == Event::Character('q') || event == Event::Escape) {
-      screen.Exit();
+      enter_dashboard();
       return true;
     }
-
+    if (event == Event::Character('q') || event == Event::Escape) {
+      app.Exit();
+      return true;
+    }
     return false;
   });
 
-
-
-  if (started == false) {
-    screen.Loop(start);
-  }
-  if (started == true) {
-    // Main menu goes here
-  }
+  auto main_component =
+      Container::Tab({start, dashboard_component}, &active_page);
+  app.Loop(main_component);
   return 0;
 }
